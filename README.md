@@ -9,8 +9,6 @@ A RimWorld 1.7 mod by **FelipheMP**. When a colonist starts an indoor meal bill,
 3. Enable **Clean Before Cooking** in RimWorld's Mods screen, below Harmony, and restart the game when prompted.
 4. Load a copy of your colony. Under Proton, use the `Mods` directory next to the Windows game executable. Steam's **Manage → Browse local files** opens the game folder.
 
-If you installed the earlier build, remove its old mod folder and enable **Clean Before Cooking**. RimWorld treats `feliphemp.cleanbeforecooking` as a new mod entry, so an existing save may report a mod-list change. Check your mod settings after switching.
-
 ## What the cook does
 
 The check happens once per bill job, after RimWorld collects the ingredients and before the recipe starts. It applies to automatic and prioritized indoor cooking. A bill qualifies if it uses the Cooking skill and produces a food item with a meal-level food preference. This includes vanilla meals and cooked survival food. A modded meal must also use the standard bill sequence. Butchering, brewing, paste dispensers, outdoor campfires, and workstations without an interaction cell are outside that path.
