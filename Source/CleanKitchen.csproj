@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <AssemblyName>CleanKitchen</AssemblyName>
+    <Version>1.0.0</Version>
+    <OutputPath>../Assemblies/</OutputPath>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <DebugType>none</DebugType>
+    <GenerateDependencyFile>false</GenerateDependencyFile>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <RimWorldDir Condition="'$(RimWorldDir)' == ''">$(RIMWORLD_DIR)</RimWorldDir>
+    <HarmonyDll Condition="'$(HarmonyDll)' == ''">$(HARMONY_DLL)</HarmonyDll>
+    <HarmonyDll Condition="'$(HarmonyDll)' == ''">$(RimWorldDir)/Mods/HarmonyMod/1.7/Assemblies/0Harmony.dll</HarmonyDll>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="Assembly-CSharp" HintPath="$(RimWorldDir)/Assembly-CSharp.dll" Private="false" />
+    <Reference Include="UnityStubs" HintPath="$(RimWorldDir)/UnityStubs.dll" Private="false" />
+    <Reference Include="Waylith.UnityCompat" HintPath="$(RimWorldDir)/Waylith.UnityCompat.dll" Private="false" />
+    <Reference Include="0Harmony" HintPath="$(HarmonyDll)" Private="false" />
+  </ItemGroup>
+  <Target Name="CheckReferences" BeforeTargets="ResolveAssemblyReferences">
+    <Error Condition="!Exists('$(RimWorldDir)/Assembly-CSharp.dll')"
+           Text="Set RIMWORLD_DIR to the RimWorld 1.7 folder containing Assembly-CSharp.dll." />
+    <Error Condition="!Exists('$(HarmonyDll)')"
+           Text="Set HARMONY_DLL to the full path to Harmony's RimWorld 1.7 0Harmony.dll." />
+  </Target>
+</Project>
