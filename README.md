@@ -15,6 +15,10 @@ The check happens once per bill job, after RimWorld collects the ingredients and
 
 The cook looks within the configured radius of the interaction cell, in the same roofed cooking room. Eligible filth must be in the visible Home area, within the pawn's allowed area, unforbidden, reachable, and available to reserve. Fresh filth is eligible immediately. The cook takes the nearest eligible targets up to the limit. If a target disappears or becomes invalid, the cook skips it. Cleanup uses the pawn's cleaning speed and the floor's cleaning time modifier. Once the pass ends, cooking proceeds. Dirt floors, room cleanliness scores, and new filth appearing after target selection do not trigger another pass in the current job.
 
+### Performance
+
+The mod has no map-wide tick loop or per-frame update. It scans the local radius once per qualifying bill. It filters and sorts nearby filth before checking reachability, then stops those checks when the target limit is filled. The same list stores the selected pass, and diagnostic labels and messages are only formatted when logging is enabled. Active cleanup still checks eligibility each tick and uses normal cleaning work timing; these optimizations do not add polling delays.
+
 ### Mod settings
 
 Open **Options → Mod Settings → Clean Before Cooking**.

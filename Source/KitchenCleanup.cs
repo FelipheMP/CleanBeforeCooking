@@ -57,26 +57,44 @@ internal sealed class KitchenCleanup : IExposable
                 if (thing is not Filth filth)
                     continue;
 
-                string reason = SkipReason(cook, filth, room);
+                string reason = SkipReason(cook, filth, room, checkReachability: false, checkRoom: false);
                 if (reason == null)
                     candidates.Add(filth);
-                else
+                else if (KitchenMod.Settings.DebugLogging)
                     KitchenMod.Trace(cook, $"Skipped {filth.Label} at {cell}: {reason}.");
             }
         }
 
         candidates.Sort((a, b) => a.Position.DistanceToSquared(origin)
             .CompareTo(b.Position.DistanceToSquared(origin)));
-        if (candidates.Count > KitchenMod.Settings.TargetLimit)
-            candidates.RemoveRange(KitchenMod.Settings.TargetLimit, candidates.Count - KitchenMod.Settings.TargetLimit);
+        // Reachability is the expensive filter. Test nearest candidates first and stop
+        // as soon as the pass is full, instead of testing the entire dirty room.
+        int selectedCount = 0;
+        for (int i = 0; i < candidates.Count; i++)
+        {
+            Thing candidate = candidates[i];
+            if (cook.CanReach(candidate, PathEndMode.Touch, Danger.Some))
+            {
+                candidates[selectedCount++] = candidate;
+                if (selectedCount == KitchenMod.Settings.TargetLimit)
+                    break;
+            }
+            else if (KitchenMod.Settings.DebugLogging)
+                KitchenMod.Trace(cook, $"Skipped {candidate.Label}: unreachable at the allowed danger level.");
+        }
 
-        if (candidates.Count == 0)
+        // Reuse the candidate list for the saved pass rather than allocating another list.
+        if (selectedCount < candidates.Count)
+            candidates.RemoveRange(selectedCount, candidates.Count - selectedCount);
+
+        if (selectedCount == 0)
         {
             KitchenMod.Trace(cook, "Cleanup skipped: no eligible filth.");
             return null;
         }
 
-        KitchenMod.Trace(cook, $"Scheduled {candidates.Count} filth target(s) before {driver.job.RecipeDef.label}.");
+        if (KitchenMod.Settings.DebugLogging)
+            KitchenMod.Trace(cook, $"Scheduled {selectedCount} filth target(s) before {driver.job.RecipeDef.label}.");
         return new KitchenCleanup { targets = candidates };
     }
 
@@ -140,13 +158,15 @@ internal sealed class KitchenCleanup : IExposable
             string reason = SkipReason(cook, filth, room);
             if (reason != null || !cook.Reserve(filth, driver.job, errorOnFailed: false))
             {
-                KitchenMod.Trace(cook, $"Skipped {filth.Label}: {reason ?? "reservation failed"}.");
+                if (KitchenMod.Settings.DebugLogging)
+                    KitchenMod.Trace(cook, $"Skipped {filth.Label}: {reason ?? "reservation failed"}.");
                 continue;
             }
 
             currentTarget = filth;
             cleaningWork = 0f;
-            KitchenMod.Trace(cook, $"Started cleanup of {filth.Label} at {filth.Position}.");
+            if (KitchenMod.Settings.DebugLogging)
+                KitchenMod.Trace(cook, $"Started cleanup of {filth.Label} at {filth.Position}.");
             return true;
         }
 
@@ -159,7 +179,8 @@ internal sealed class KitchenCleanup : IExposable
         string reason = PathFailed ? "path failed" : SkipReason(cook, filth, room, checkReachability: false);
         if (reason != null)
         {
-            KitchenMod.Trace(cook, $"Skipped {filth.Label}: {reason}.");
+            if (KitchenMod.Settings.DebugLogging)
+                KitchenMod.Trace(cook, $"Skipped {filth.Label}: {reason}.");
             ReleaseCurrent(driver);
             return;
         }
@@ -195,13 +216,14 @@ internal sealed class KitchenCleanup : IExposable
             return;
 
         cleaningWork = 0f;
-        string label = filth.Label;
+        string label = KitchenMod.Settings.DebugLogging ? filth.Label : null;
         filth.ThinFilth();
         if (!filth.Destroyed)
             return;
 
         cook.records.Increment(RecordDefOf.MessesCleaned);
-        KitchenMod.Trace(cook, $"Completed cleanup of {label}.");
+        if (KitchenMod.Settings.DebugLogging)
+            KitchenMod.Trace(cook, $"Completed cleanup of {label}.");
         ReleaseCurrent(driver);
     }
 
@@ -229,11 +251,11 @@ internal sealed class KitchenCleanup : IExposable
         return room != null && !room.IsDoorway && !room.OutdoorsForWork;
     }
 
-    private static string SkipReason(Pawn cook, Filth filth, Room room, bool checkReachability = true)
+    private static string SkipReason(Pawn cook, Filth filth, Room room, bool checkReachability = true, bool checkRoom = true)
     {
         if (!filth.Spawned || filth.Map != cook.Map)
             return "filth already gone";
-        if (filth.Position.GetRoom(cook.Map) != room)
+        if (checkRoom && filth.Position.GetRoom(cook.Map) != room)
             return "outside the cooking room";
         if (!cook.Map.areaManager.Home[filth.Position] || filth.Fogged())
             return "outside the visible Home area";

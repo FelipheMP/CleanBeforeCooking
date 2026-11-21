@@ -4,7 +4,7 @@
   <author>FelipheMP</author>
   <packageId>feliphemp.cleanbeforecooking</packageId>
   <url>https://github.com/feliphemp/CleanBeforeCooking</url>
-  <modVersion>1.0.0</modVersion>
+  <modVersion>1.1.0</modVersion>
   <supportedVersions>
     <li>1.7</li>
   </supportedVersions>
